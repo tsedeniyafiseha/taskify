@@ -1,0 +1,253 @@
+import { Task, Category } from '@/types';
+
+// Using Unsplash Source for real images
+export const categories: Category[] = [
+  { id: 'all', name: 'All Tasks', icon: 'Grid3X3', count: 156, image: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=400&h=300&fit=crop' },
+  { id: 'cleaning', name: 'Cleaning', icon: 'Sparkles', count: 34, image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=300&fit=crop' },
+  { id: 'delivery', name: 'Delivery', icon: 'Truck', count: 28, image: 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=400&h=300&fit=crop' },
+  { id: 'handyman', name: 'Handyman', icon: 'Wrench', count: 22, image: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=400&h=300&fit=crop' },
+  { id: 'moving', name: 'Moving', icon: 'Package', count: 18, image: 'https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=400&h=300&fit=crop' },
+  { id: 'gardening', name: 'Gardening', icon: 'Leaf', count: 15, image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=300&fit=crop' },
+  { id: 'assembly', name: 'Assembly', icon: 'Puzzle', count: 12, image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop' },
+  { id: 'tech', name: 'Tech Help', icon: 'Monitor', count: 14, image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&h=300&fit=crop' },
+  { id: 'admin', name: 'Admin', icon: 'FileText', count: 8, image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=300&fit=crop' },
+  { id: 'design', name: 'Design', icon: 'Palette', count: 5, image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop' },
+];
+
+export const tasks: Task[] = [
+  {
+    id: '1',
+    title: 'Deep clean 3-bedroom house',
+    description: 'Need thorough cleaning including kitchen, bathrooms, and all bedrooms. Must bring own supplies.',
+    category: 'cleaning',
+    budget: 180,
+    location: 'Riccarton',
+    postedAt: '2 hours ago',
+    status: 'open',
+    offers: 12,
+    image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=600&fit=crop',
+    poster: { name: 'Sarah M.', avatar: 'https://i.pravatar.cc/150?img=1', rating: 4.9, tasksPosted: 23 }
+  },
+  {
+    id: '2',
+    title: 'Pick up and deliver furniture from Mitre 10',
+    description: 'Need someone with a van to pick up a sofa and bookshelf from Mitre 10 Hornby and deliver to Merivale.',
+    category: 'delivery',
+    budget: 95,
+    location: 'Hornby',
+    postedAt: '4 hours ago',
+    status: 'open',
+    offers: 8,
+    image: 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=800&h=600&fit=crop',
+    poster: { name: 'James K.', avatar: 'https://i.pravatar.cc/150?img=12', rating: 4.7, tasksPosted: 15 }
+  },
+  {
+    id: '3',
+    title: 'Assemble wardrobe and desk',
+    description: 'Flatpack wardrobe and desk need assembly. All parts and tools provided.',
+    category: 'assembly',
+    budget: 120,
+    location: 'Papanui',
+    postedAt: '5 hours ago',
+    status: 'open',
+    offers: 6,
+    image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop',
+    poster: { name: 'Lisa T.', avatar: 'https://i.pravatar.cc/150?img=5', rating: 5.0, tasksPosted: 8 }
+  },
+  {
+    id: '4',
+    title: 'Garden cleanup and lawn mowing',
+    description: 'Overgrown backyard needs attention. Mowing, weeding, and general tidy up required.',
+    category: 'gardening',
+    budget: 150,
+    location: 'Fendalton',
+    postedAt: '6 hours ago',
+    status: 'open',
+    offers: 4,
+    image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&h=600&fit=crop',
+    poster: { name: 'Mike R.', avatar: 'https://i.pravatar.cc/150?img=13', rating: 4.8, tasksPosted: 31 }
+  },
+  {
+    id: '5',
+    title: 'Help moving house - 2 bedroom unit',
+    description: 'Moving from Sydenham to Addington. Need 2 people with a truck. Mostly boxes and some furniture.',
+    category: 'moving',
+    budget: 350,
+    location: 'Sydenham',
+    postedAt: '8 hours ago',
+    status: 'open',
+    offers: 15,
+    image: 'https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=800&h=600&fit=crop',
+    poster: { name: 'Emma W.', avatar: 'https://i.pravatar.cc/150?img=9', rating: 4.6, tasksPosted: 5 }
+  },
+  {
+    id: '6',
+    title: 'Fix leaking bathroom tap',
+    description: 'Bathroom tap has been dripping for weeks. Need a handyman to fix or replace if necessary.',
+    category: 'handyman',
+    budget: 80,
+    location: 'Sumner',
+    postedAt: '10 hours ago',
+    status: 'open',
+    offers: 7,
+    image: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=800&h=600&fit=crop',
+    poster: { name: 'David L.', avatar: 'https://i.pravatar.cc/150?img=14', rating: 4.9, tasksPosted: 12 }
+  },
+  {
+    id: '7',
+    title: 'Set up home office network',
+    description: 'Need help setting up WiFi extenders and organizing cables for home office setup.',
+    category: 'tech',
+    budget: 100,
+    location: 'Ilam',
+    postedAt: '12 hours ago',
+    status: 'open',
+    offers: 5,
+    image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=600&fit=crop',
+    poster: { name: 'Anna P.', avatar: 'https://i.pravatar.cc/150?img=16', rating: 4.5, tasksPosted: 3 }
+  },
+  {
+    id: '8',
+    title: 'End of tenancy cleaning',
+    description: 'Full bond clean for 2-bedroom apartment. Oven, carpets, and windows included.',
+    category: 'cleaning',
+    budget: 320,
+    location: 'CBD',
+    postedAt: '1 day ago',
+    status: 'open',
+    offers: 18,
+    image: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?w=800&h=600&fit=crop',
+    poster: { name: 'Chris B.', avatar: 'https://i.pravatar.cc/150?img=33', rating: 4.8, tasksPosted: 7 }
+  },
+  {
+    id: '9',
+    title: 'Urgent document delivery',
+    description: 'Need important documents delivered from CBD to Christchurch Airport within 2 hours.',
+    category: 'delivery',
+    budget: 60,
+    location: 'CBD',
+    postedAt: '1 day ago',
+    status: 'assigned',
+    offers: 9,
+    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&h=600&fit=crop',
+    poster: { name: 'Rachel G.', avatar: 'https://i.pravatar.cc/150?img=20', rating: 4.7, tasksPosted: 19 }
+  },
+  {
+    id: '10',
+    title: 'Mount TV on wall',
+    description: '65 inch TV needs mounting on brick wall. Bracket provided, need tools and expertise.',
+    category: 'handyman',
+    budget: 90,
+    location: 'New Brighton',
+    postedAt: '1 day ago',
+    status: 'open',
+    offers: 11,
+    image: 'https://images.unsplash.com/photo-1593784991095-a205069470b6?w=800&h=600&fit=crop',
+    poster: { name: 'Tom H.', avatar: 'https://i.pravatar.cc/150?img=52', rating: 4.9, tasksPosted: 28 }
+  },
+  {
+    id: '11',
+    title: 'Data entry - 500 records',
+    description: 'Need someone to enter product data into spreadsheet. Approximately 500 items.',
+    category: 'admin',
+    budget: 150,
+    location: 'Remote',
+    postedAt: '2 days ago',
+    status: 'open',
+    offers: 22,
+    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=600&fit=crop',
+    poster: { name: 'Sophie N.', avatar: 'https://i.pravatar.cc/150?img=47', rating: 4.6, tasksPosted: 14 }
+  },
+  {
+    id: '12',
+    title: 'Logo design for startup',
+    description: 'Need a modern, minimalist logo for tech startup. Multiple concepts required.',
+    category: 'design',
+    budget: 250,
+    location: 'Remote',
+    postedAt: '2 days ago',
+    status: 'open',
+    offers: 31,
+    image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&h=600&fit=crop',
+    poster: { name: 'Alex F.', avatar: 'https://i.pravatar.cc/150?img=68', rating: 4.8, tasksPosted: 6 }
+  },
+];
+
+export const locations = [
+  'All Locations',
+  'Christchurch CBD',
+  'Riccarton',
+  'Papanui',
+  'Fendalton',
+  'Merivale',
+  'Ilam',
+  'Hornby',
+  'Addington',
+  'Sydenham',
+  'Sumner',
+  'New Brighton',
+  'Linwood',
+  'Woolston',
+  'Halswell',
+  'Cashmere',
+  'St Albans',
+  'Shirley',
+];
+
+export const featuredTaskers = [
+  {
+    id: '1',
+    name: 'Hassan M.',
+    avatar: 'https://i.pravatar.cc/150?img=33',
+    rating: 5.0,
+    reviews: 73,
+    completionRate: 97,
+    specialties: ['Plumbing', 'Gas Fitting', 'Renovations'],
+    description: 'Professional plumber with 11 years experience. Available for emergency callouts.',
+    verified: true,
+    image: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=600&h=400&fit=crop'
+  },
+  {
+    id: '2',
+    name: 'Philippe R.',
+    avatar: 'https://i.pravatar.cc/150?img=12',
+    rating: 4.9,
+    reviews: 818,
+    completionRate: 93,
+    specialties: ['Delivery', 'Removals', 'Furniture'],
+    description: 'Managing a team of 12 removalists. We handle moves of all sizes across Canterbury.',
+    verified: true,
+    image: 'https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=600&h=400&fit=crop'
+  },
+  {
+    id: '3',
+    name: 'Star L.',
+    avatar: 'https://i.pravatar.cc/150?img=47',
+    rating: 4.7,
+    reviews: 17,
+    completionRate: 95,
+    specialties: ['Residential Cleaning', 'End of Lease', 'Commercial'],
+    description: 'Thorough, reliable cleaner. I take pride in leaving every space spotless.',
+    verified: true,
+    image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=400&fit=crop'
+  },
+  {
+    id: '4',
+    name: 'Geoff T.',
+    avatar: 'https://i.pravatar.cc/150?img=68',
+    rating: 5.0,
+    reviews: 206,
+    completionRate: 95,
+    specialties: ['Gardening', 'Cleaning', 'Handyman'],
+    description: 'Jack of all trades. No job too small. Flexible hours to suit your schedule.',
+    verified: true,
+    image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=400&fit=crop'
+  },
+];
+
+export const stats = [
+  { label: 'Tasks Completed', value: '50,000+' },
+  { label: 'Active Taskers', value: '2,500+' },
+  { label: 'Happy Customers', value: '15,000+' },
+  { label: 'Average Rating', value: '4.8★' },
+];
