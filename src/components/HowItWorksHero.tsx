@@ -25,10 +25,10 @@ const steps = [
 
 export default function HowItWorksHero() {
   return (
-    <section className="py-20 md:py-32 bg-black relative overflow-hidden">
-      {/* Purple glow effects */}
-      <div className="absolute top-20 right-10 w-96 h-96 bg-purple-600 rounded-full blur-[120px] opacity-20" />
-      <div className="absolute bottom-20 left-10 w-96 h-96 bg-purple-800 rounded-full blur-[120px] opacity-20" />
+    <section className="py-20 md:py-32 bg-gray-50 relative overflow-hidden">
+      {/* Subtle glow effects */}
+      <div className="absolute top-20 right-10 w-96 h-96 bg-purple-200 rounded-full blur-[120px] opacity-30" />
+      <div className="absolute bottom-20 left-10 w-96 h-96 bg-purple-300 rounded-full blur-[120px] opacity-20" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -40,7 +40,7 @@ export default function HowItWorksHero() {
             transition={{ duration: 0.6 }}
             className="relative"
           >
-            <div className="relative rounded-3xl overflow-hidden glass border border-neutral-800 hover:border-purple-500/50 transition-all">
+            <div className="relative rounded-3xl overflow-hidden bg-white border border-gray-200 shadow-xl hover:shadow-2xl transition-all">
               <Image
                 src="/hero-categories.png"
                 alt="Taskify Categories"
@@ -49,8 +49,8 @@ export default function HowItWorksHero() {
                 className="w-full h-auto"
                 priority
               />
-              {/* Purple overlay gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+              {/* Overlay gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-transparent to-transparent pointer-events-none" />
               
               {/* Top-right floating badge - Rating */}
               <motion.div
@@ -58,7 +58,7 @@ export default function HowItWorksHero() {
                 whileInView={{ opacity: 1, scale: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.4, duration: 0.5 }}
-                className="absolute top-6 right-6 bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-4 shadow-xl"
+                className="absolute top-6 right-6 bg-white rounded-2xl px-5 py-4 shadow-xl border border-gray-100"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
@@ -77,7 +77,7 @@ export default function HowItWorksHero() {
                 whileInView={{ opacity: 1, scale: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.6, duration: 0.5 }}
-                className="absolute bottom-6 left-6 bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-4 shadow-xl"
+                className="absolute bottom-6 left-6 bg-white rounded-2xl px-5 py-4 shadow-xl border border-gray-100"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
@@ -131,7 +131,7 @@ export default function HowItWorksHero() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-4xl md:text-5xl font-bold mb-4 text-white"
+              className="text-4xl md:text-5xl font-bold mb-4 text-gray-900"
             >
               Post your first task in seconds
             </motion.h2>
@@ -140,7 +140,7 @@ export default function HowItWorksHero() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
               viewport={{ once: true }}
-              className="text-lg text-neutral-400 mb-10"
+              className="text-lg text-gray-500 mb-10"
             >
               Save yourself hours and get your to-do list completed
             </motion.p>
@@ -156,14 +156,14 @@ export default function HowItWorksHero() {
                   viewport={{ once: true }}
                   className="flex items-start gap-4 group"
                 >
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-white font-bold text-lg purple-glow group-hover:scale-110 transition-transform">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg group-hover:scale-110 transition-transform">
                     {step.number}
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-purple-300 transition-colors">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
                       {step.title}
                     </h3>
-                    <p className="text-neutral-400 text-sm leading-relaxed">
+                    <p className="text-gray-500 text-sm leading-relaxed">
                       {step.description}
                     </p>
                   </div>
@@ -180,7 +180,7 @@ export default function HowItWorksHero() {
                 viewport={{ once: true }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-full text-lg font-semibold hover:from-purple-700 hover:to-purple-900 transition-all shadow-xl purple-glow group"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-purple-600 text-white rounded-full text-lg font-semibold hover:bg-purple-700 transition-all shadow-lg group"
               >
                 Post your task
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

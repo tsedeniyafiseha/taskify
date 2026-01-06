@@ -25,7 +25,7 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-black">
+    <div className="min-h-screen flex flex-col bg-white">
       <Header />
       <CategoryBar 
         selectedCategory={filters.category} 

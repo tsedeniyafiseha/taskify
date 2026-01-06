@@ -24,8 +24,8 @@ export default function Header() {
       transition={{ duration: 0.6, type: "spring" }}
       className={`sticky top-0 z-50 transition-all duration-300 ${
         isScrolled 
-          ? 'glass shadow-lg border-b border-neutral-800' 
-          : 'bg-black/80 backdrop-blur-sm border-b border-neutral-800'
+          ? 'bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-200' 
+          : 'bg-white border-b border-gray-100'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -33,7 +33,7 @@ export default function Header() {
           {/* Logo */}
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2 group">
-              <span className="text-2xl font-bold tracking-tight text-white">Taskify</span>
+              <span className="text-2xl font-bold tracking-tight text-gray-900">Taskify</span>
             </Link>
             
             {/* Desktop Nav */}
@@ -42,7 +42,7 @@ export default function Header() {
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all"
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all"
                 >
                   Browse Tasks
                 </motion.div>
@@ -51,7 +51,7 @@ export default function Header() {
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all"
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all"
                 >
                   How it Works
                 </motion.div>
@@ -60,7 +60,7 @@ export default function Header() {
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all"
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all"
                 >
                   Become a Tasker
                 </motion.div>
@@ -74,15 +74,15 @@ export default function Header() {
               animate={{ 
                 scale: searchFocused ? 1.02 : 1,
               }}
-              className={`w-full flex items-center bg-neutral-900 rounded-2xl px-4 py-2.5 transition-all duration-300 border ${
-                searchFocused ? 'border-purple-500 purple-glow' : 'border-neutral-800 hover:border-neutral-700'
+              className={`w-full flex items-center bg-gray-100 rounded-2xl px-4 py-2.5 transition-all duration-300 border ${
+                searchFocused ? 'border-purple-500 ring-2 ring-purple-100' : 'border-transparent hover:border-gray-200'
               }`}
             >
-              <Search className={`w-4 h-4 mr-3 flex-shrink-0 transition-colors ${searchFocused ? 'text-purple-400' : 'text-neutral-500'}`} />
+              <Search className={`w-4 h-4 mr-3 flex-shrink-0 transition-colors ${searchFocused ? 'text-purple-500' : 'text-gray-400'}`} />
               <input
                 type="text"
                 placeholder="Search for tasks..."
-                className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-500 text-white"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-gray-400 text-gray-900"
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setSearchFocused(false)}
               />
@@ -95,7 +95,7 @@ export default function Header() {
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-800 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:shadow-xl transition-all purple-glow"
+                className="hidden sm:flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-purple-700 transition-all shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 Post Task
@@ -105,30 +105,30 @@ export default function Header() {
             <motion.button 
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="p-2.5 hover:bg-neutral-800 rounded-full transition-colors relative"
+              className="p-2.5 hover:bg-gray-100 rounded-full transition-colors relative"
             >
-              <Bell className="w-5 h-5 text-neutral-400" />
+              <Bell className="w-5 h-5 text-gray-500" />
               <motion.span 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.5, type: "spring" }}
-                className="absolute top-1.5 right-1.5 w-2 h-2 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full shadow-lg"
+                className="absolute top-1.5 right-1.5 w-2 h-2 bg-purple-500 rounded-full shadow-lg"
               />
             </motion.button>
             
             <motion.button 
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="p-2.5 hover:bg-neutral-800 rounded-full transition-colors"
+              className="p-2.5 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <User className="w-5 h-5 text-neutral-400" />
+              <User className="w-5 h-5 text-gray-500" />
             </motion.button>
 
             <button 
-              className="md:hidden p-2.5 hover:bg-neutral-800 rounded-full transition-colors"
+              className="md:hidden p-2.5 hover:bg-gray-100 rounded-full transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X className="w-5 h-5 text-neutral-400" /> : <Menu className="w-5 h-5 text-neutral-400" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 text-gray-500" /> : <Menu className="w-5 h-5 text-gray-500" />}
             </button>
           </div>
         </div>
@@ -139,29 +139,29 @@ export default function Header() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden py-4 border-t border-neutral-800"
+            className="md:hidden py-4 border-t border-gray-100"
           >
-            <div className="flex items-center bg-neutral-900 rounded-2xl px-4 py-2.5 mb-4 border border-neutral-800">
-              <Search className="w-4 h-4 text-neutral-500 mr-3" />
+            <div className="flex items-center bg-gray-100 rounded-2xl px-4 py-2.5 mb-4">
+              <Search className="w-4 h-4 text-gray-400 mr-3" />
               <input
                 type="text"
                 placeholder="Search for tasks..."
-                className="w-full bg-transparent text-sm outline-none text-white placeholder:text-neutral-500"
+                className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder:text-gray-400"
               />
             </div>
             <nav className="flex flex-col gap-2">
-              <Link href="/tasks" className="px-3 py-2.5 text-sm font-medium text-neutral-400 hover:bg-neutral-800 hover:text-white rounded-xl transition-all" onClick={() => setMobileMenuOpen(false)}>
+              <Link href="/tasks" className="px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition-all" onClick={() => setMobileMenuOpen(false)}>
                 Browse Tasks
               </Link>
-              <Link href="/how-it-works" className="px-3 py-2.5 text-sm font-medium text-neutral-400 hover:bg-neutral-800 hover:text-white rounded-xl transition-all" onClick={() => setMobileMenuOpen(false)}>
+              <Link href="/how-it-works" className="px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition-all" onClick={() => setMobileMenuOpen(false)}>
                 How it Works
               </Link>
-              <Link href="/become-tasker" className="px-3 py-2.5 text-sm font-medium text-neutral-400 hover:bg-neutral-800 hover:text-white rounded-xl transition-all" onClick={() => setMobileMenuOpen(false)}>
+              <Link href="/become-tasker" className="px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition-all" onClick={() => setMobileMenuOpen(false)}>
                 Become a Tasker
               </Link>
             </nav>
             <Link href="/post-task" onClick={() => setMobileMenuOpen(false)}>
-              <button className="w-full mt-4 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-purple-800 text-white px-4 py-3 rounded-2xl text-sm font-semibold shadow-xl purple-glow">
+              <button className="w-full mt-4 flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-3 rounded-2xl text-sm font-semibold hover:bg-purple-700 transition-all">
                 <Plus className="w-4 h-4" />
                 Post a Task
               </button>

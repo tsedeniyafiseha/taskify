@@ -41,10 +41,10 @@ export default function TaskList({ tasks, filters, onOpenFilters }: TaskListProp
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-lg font-semibold text-neutral-900">
+          <h2 className="text-lg font-semibold text-gray-900">
             {filteredTasks.length} tasks available
           </h2>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-gray-500">
             {filters.category === 'all' ? 'All categories' : filters.category.charAt(0).toUpperCase() + filters.category.slice(1)}
             {filters.location !== 'All Locations' && ` in ${filters.location}`}
           </p>
@@ -54,23 +54,23 @@ export default function TaskList({ tasks, filters, onOpenFilters }: TaskListProp
           {/* Mobile Filter Button */}
           <button 
             onClick={onOpenFilters}
-            className="lg:hidden flex items-center gap-2 px-4 py-2 border border-neutral-200 rounded-full text-sm font-medium hover:bg-neutral-50 transition-colors"
+            className="lg:hidden flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors text-gray-700"
           >
             <SlidersHorizontal className="w-4 h-4" />
             Filters
           </button>
 
           {/* View Toggle */}
-          <div className="hidden sm:flex items-center bg-neutral-100 rounded-lg p-1">
+          <div className="hidden sm:flex items-center bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-neutral-200'}`}
+              className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:bg-gray-200'}`}
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-neutral-200'}`}
+              className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:bg-gray-200'}`}
             >
               <List className="w-4 h-4" />
             </button>
@@ -90,14 +90,14 @@ export default function TaskList({ tasks, filters, onOpenFilters }: TaskListProp
         </div>
       ) : (
         <div className="text-center py-16">
-          <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <SlidersHorizontal className="w-8 h-8 text-neutral-400" />
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <SlidersHorizontal className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-neutral-900 mb-2">No tasks found</h3>
-          <p className="text-neutral-500 mb-4">Try adjusting your filters to see more results</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
+          <p className="text-gray-500 mb-4">Try adjusting your filters to see more results</p>
           <button 
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-black text-white rounded-full text-sm font-medium hover:bg-neutral-800 transition-colors"
+            className="px-4 py-2 bg-purple-600 text-white rounded-full text-sm font-medium hover:bg-purple-700 transition-colors"
           >
             Clear Filters
           </button>
@@ -107,7 +107,7 @@ export default function TaskList({ tasks, filters, onOpenFilters }: TaskListProp
       {/* Load More */}
       {filteredTasks.length > 0 && (
         <div className="text-center mt-8">
-          <button className="px-6 py-3 border border-neutral-200 rounded-full text-sm font-medium hover:bg-neutral-50 transition-colors">
+          <button className="px-6 py-3 border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
             Load More Tasks
           </button>
         </div>

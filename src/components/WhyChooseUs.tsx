@@ -23,9 +23,9 @@ const features = [
 
 export default function WhyChooseUs() {
   return (
-    <section className="py-32 bg-black relative overflow-hidden">
+    <section className="py-32 bg-white relative overflow-hidden">
       {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-950/5 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-50/30 to-transparent" />
       
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
         {/* Header */}
@@ -34,7 +34,7 @@ export default function WhyChooseUs() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-5xl md:text-6xl font-bold mb-6 text-white tracking-tight"
+            className="text-5xl md:text-6xl font-bold mb-6 text-gray-900 tracking-tight"
           >
             Built for everyone
           </motion.h2>
@@ -44,7 +44,7 @@ export default function WhyChooseUs() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             viewport={{ once: true }}
-            className="text-xl text-neutral-400 leading-relaxed max-w-2xl mx-auto"
+            className="text-xl text-gray-500 leading-relaxed max-w-2xl mx-auto"
           >
             Whether you need help or want to earn, Taskify makes it simple
           </motion.p>
@@ -63,16 +63,16 @@ export default function WhyChooseUs() {
             >
               {/* Icon */}
               <div className="mb-6">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 group-hover:bg-purple-500/20 group-hover:border-purple-500/40 transition-all duration-300">
-                  <feature.icon className="w-6 h-6 text-purple-400" />
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-purple-100 border border-purple-200 group-hover:bg-purple-200 group-hover:border-purple-300 transition-all duration-300">
+                  <feature.icon className="w-6 h-6 text-purple-600" />
                 </div>
               </div>
 
               {/* Content */}
-              <h3 className="text-2xl font-semibold text-white mb-4 tracking-tight">
+              <h3 className="text-2xl font-semibold text-gray-900 mb-4 tracking-tight">
                 {feature.title}
               </h3>
-              <p className="text-neutral-400 leading-relaxed text-lg">
+              <p className="text-gray-500 leading-relaxed text-lg">
                 {feature.description}
               </p>
             </motion.div>

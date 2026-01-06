@@ -18,11 +18,11 @@ export default function Newsletter() {
   };
 
   return (
-    <section className="py-20 bg-black text-white relative overflow-hidden">
+    <section className="py-20 bg-purple-600 text-white relative overflow-hidden">
       {/* Animated background */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-purple-600 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-800 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-300 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
@@ -30,7 +30,7 @@ export default function Newsletter() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="inline-flex items-center gap-2 glass-dark px-4 py-2 rounded-full mb-6"
+          className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/30"
         >
           <Mail className="w-4 h-4" />
           <span className="text-sm font-semibold">Stay Updated</span>
@@ -51,7 +51,7 @@ export default function Newsletter() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           viewport={{ once: true }}
-          className="text-neutral-400 mb-8 max-w-xl mx-auto"
+          className="text-white/80 mb-8 max-w-xl mx-auto"
         >
           Subscribe to our newsletter and be the first to know about new tasks, special offers, and tips for getting things done.
         </motion.p>
@@ -67,21 +67,21 @@ export default function Newsletter() {
           {!subscribed ? (
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
-                  className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-full text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur-sm"
+                  className="w-full pl-12 pr-4 py-4 bg-white border border-white/20 rounded-full text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50"
                 />
               </div>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 type="submit"
-                className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-purple-800 text-white px-8 py-4 rounded-full font-semibold hover:from-purple-700 hover:to-purple-900 transition-all shadow-xl purple-glow group"
+                className="flex items-center justify-center gap-2 bg-gray-900 text-white px-8 py-4 rounded-full font-semibold hover:bg-gray-800 transition-all shadow-xl group"
               >
                 Subscribe
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -91,9 +91,9 @@ export default function Newsletter() {
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="flex items-center justify-center gap-3 glass-dark px-6 py-4 rounded-full border border-purple-500/30"
+              className="flex items-center justify-center gap-3 bg-white/20 backdrop-blur-sm px-6 py-4 rounded-full border border-white/30"
             >
-              <CheckCircle className="w-6 h-6 text-purple-400" />
+              <CheckCircle className="w-6 h-6 text-white" />
               <span className="font-semibold">Thanks for subscribing!</span>
             </motion.div>
           )}
@@ -104,7 +104,7 @@ export default function Newsletter() {
           whileInView={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
           viewport={{ once: true }}
-          className="text-xs text-neutral-500 mt-4"
+          className="text-xs text-white/60 mt-4"
         >
           We respect your privacy. Unsubscribe at any time.
         </motion.p>

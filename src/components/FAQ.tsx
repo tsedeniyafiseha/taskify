@@ -43,7 +43,7 @@ export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section className="py-24 bg-black">
+    <section className="py-24 bg-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-16">
           <motion.div
@@ -52,7 +52,7 @@ export default function FAQ() {
             viewport={{ once: true }}
             className="inline-block mb-4"
           >
-            <span className="glass px-4 py-2 rounded-full text-sm font-semibold text-purple-400 border border-purple-500/30">
+            <span className="bg-purple-100 border border-purple-200 px-4 py-2 rounded-full text-sm font-semibold text-purple-700">
               FAQ
             </span>
           </motion.div>
@@ -69,7 +69,7 @@ export default function FAQ() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             viewport={{ once: true }}
-            className="text-lg text-neutral-400"
+            className="text-lg text-gray-500"
           >
             Everything you need to know about Taskify
           </motion.p>
@@ -83,13 +83,13 @@ export default function FAQ() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
               viewport={{ once: true }}
-              className="glass border border-neutral-800 rounded-2xl overflow-hidden hover:border-purple-500/30 hover:purple-glow transition-all"
+              className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-purple-300 hover:shadow-md transition-all"
             >
               <button
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="w-full flex items-center justify-between p-6 text-left hover:bg-neutral-900/50 transition-colors"
+                className="w-full flex items-center justify-between p-6 text-left hover:bg-gray-50 transition-colors"
               >
-                <span className="font-semibold text-lg text-white pr-8">
+                <span className="font-semibold text-lg text-gray-900 pr-8">
                   {faq.question}
                 </span>
                 <motion.div
@@ -98,9 +98,9 @@ export default function FAQ() {
                   className="flex-shrink-0"
                 >
                   {openIndex === index ? (
-                    <Minus className="w-5 h-5 text-purple-400" />
+                    <Minus className="w-5 h-5 text-purple-600" />
                   ) : (
-                    <Plus className="w-5 h-5 text-purple-400" />
+                    <Plus className="w-5 h-5 text-purple-600" />
                   )}
                 </motion.div>
               </button>
@@ -114,7 +114,7 @@ export default function FAQ() {
                     transition={{ duration: 0.3 }}
                     className="overflow-hidden"
                   >
-                    <div className="px-6 pb-6 text-neutral-400 leading-relaxed">
+                    <div className="px-6 pb-6 text-gray-500 leading-relaxed">
                       {faq.answer}
                     </div>
                   </motion.div>
@@ -130,8 +130,8 @@ export default function FAQ() {
           viewport={{ once: true }}
           className="mt-12 text-center"
         >
-          <p className="text-neutral-400 mb-4">Still have questions?</p>
-          <button className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-full font-semibold hover:from-purple-700 hover:to-purple-900 transition-all purple-glow">
+          <p className="text-gray-500 mb-4">Still have questions?</p>
+          <button className="px-6 py-3 bg-purple-600 text-white rounded-full font-semibold hover:bg-purple-700 transition-all shadow-lg">
             Contact Support
           </button>
         </motion.div>
