@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get('stripe-signature')!;
 
-  let event: Stripe.Event;
+  let event: any;
 
   try {
     event = stripe.webhooks.constructEvent(
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
+        const session = event.data.object;
         const { userId, type, taskId } = session.metadata || {};
 
         if (!userId || !type) break;
@@ -77,11 +77,11 @@ export async function POST(request: NextRequest) {
       }
 
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription;
-        const customerId = subscription.customer as string;
+        const subscription = event.data.object;
+        const customerId = subscription.customer;
         
         // Find user by stripe customer and deactivate subscription
-        const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+        const customer = await stripe.customers.retrieve(customerId);
         if (customer.email) {
           await supabaseAdmin.from('profiles').update({
             subscription_active: false,
