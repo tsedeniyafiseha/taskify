@@ -7,7 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { createClient } from '@/lib/supabase/client';
 import { Task, Category, Location, Profile } from '@/types/database';
-import { MapPin, Clock, Phone, Mail, ArrowLeft, Calendar, MessageCircle, Loader2, Lock, CheckCircle, XCircle, Eye, Star } from 'lucide-react';
+import { MapPin, Clock, Phone, Mail, ArrowLeft, Calendar, MessageCircle, Loader2, Lock, CheckCircle, XCircle, Eye, Star, DollarSign, Send, Users } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
@@ -151,10 +151,15 @@ export default function TaskDetailPage() {
   
   const [task, setTask] = useState<any | null>(null);
   const [relatedTasks, setRelatedTasks] = useState<any[]>([]);
+  const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState(false);
   const [isSample, setIsSample] = useState(false);
+  const [showOfferForm, setShowOfferForm] = useState(false);
+  const [offerAmount, setOfferAmount] = useState('');
+  const [offerMessage, setOfferMessage] = useState('');
+  const [submittingOffer, setSubmittingOffer] = useState(false);
 
   useEffect(() => {
     fetchTask();
@@ -207,6 +212,15 @@ export default function TaskDetailPage() {
         .limit(3);
       
       if (related) setRelatedTasks(related);
+      
+      // Fetch offers for this task
+      const { data: offersData } = await supabase
+        .from('offers')
+        .select('*, worker:profiles(full_name, created_at)')
+        .eq('task_id', taskId)
+        .order('created_at', { ascending: false });
+      
+      if (offersData) setOffers(offersData);
     }
     
     setLoading(false);
@@ -225,6 +239,47 @@ export default function TaskDetailPage() {
     if (!error) {
       await fetchTask();
     }
+    setUpdating(false);
+  };
+
+  const submitOffer = async () => {
+    if (!task || !profile || isSample || !offerAmount) return;
+    setSubmittingOffer(true);
+    
+    const { error } = await supabase
+      .from('offers')
+      .insert({
+        task_id: task.id,
+        worker_id: profile.id,
+        amount: parseFloat(offerAmount),
+        message: offerMessage
+      });
+
+    if (!error) {
+      setOfferAmount('');
+      setOfferMessage('');
+      setShowOfferForm(false);
+      await fetchTask(); // Refresh offers
+    }
+    setSubmittingOffer(false);
+  };
+
+  const acceptOffer = async (offerId: string, workerId: string) => {
+    if (!task || !profile || isSample) return;
+    setUpdating(true);
+    
+    // Accept the offer and assign worker
+    await supabase.from('offers').update({ status: 'accepted' }).eq('id', offerId);
+    await supabase.from('tasks').update({ assigned_worker_id: workerId }).eq('id', task.id);
+    
+    // Reject all other offers
+    await supabase
+      .from('offers')
+      .update({ status: 'rejected' })
+      .eq('task_id', task.id)
+      .neq('id', offerId);
+    
+    await fetchTask();
     setUpdating(false);
   };
 
@@ -457,6 +512,71 @@ export default function TaskDetailPage() {
                   <div className="text-sm text-gray-500">{task.budget_type === 'fixed' ? 'Fixed price' : 'Per hour'}</div>
                 </div>
 
+                {/* Offers Section for Workers */}
+                {!isSample && isApprovedWorker && task.status === 'approved' && !task.assigned_worker_id && (
+                  <div className="mb-6">
+                    {offers.find(o => o.worker_id === profile?.id) ? (
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <div className="flex items-center gap-2 text-green-700">
+                          <CheckCircle className="w-5 h-5" />
+                          <span className="font-medium">Offer submitted</span>
+                        </div>
+                        <p className="text-sm text-green-600 mt-1">You've made an offer for this task</p>
+                      </div>
+                    ) : showOfferForm ? (
+                      <div className="space-y-4">
+                        <h3 className="font-medium text-gray-900">Make an Offer</h3>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Your Price</label>
+                          <div className="relative">
+                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="number"
+                              value={offerAmount}
+                              onChange={(e) => setOfferAmount(e.target.value)}
+                              placeholder="0"
+                              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Message (optional)</label>
+                          <textarea
+                            value={offerMessage}
+                            onChange={(e) => setOfferMessage(e.target.value)}
+                            placeholder="Tell them why you're the right person for this job..."
+                            rows={3}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 resize-none"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setShowOfferForm(false)}
+                            className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={submitOffer}
+                            disabled={!offerAmount || submittingOffer}
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+                          >
+                            {submittingOffer ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                            Submit Offer
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowOfferForm(true)}
+                        className="w-full py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-colors"
+                      >
+                        Make an Offer
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {/* Contact Section */}
                 {isSample ? (
                   <div className="space-y-4">
@@ -518,6 +638,62 @@ export default function TaskDetailPage() {
                   </div>
                 )}
               </motion.div>
+
+              {/* Offers for Task Owner */}
+              {!isSample && isOwner && offers.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-white rounded-2xl p-6 border border-gray-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="w-5 h-5 text-purple-600" />
+                    <h3 className="font-medium text-gray-900">Offers ({offers.length})</h3>
+                  </div>
+                  <div className="space-y-4">
+                    {offers.map((offer) => (
+                      <div key={offer.id} className="p-4 bg-gray-50 rounded-xl">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                <span className="text-sm font-semibold text-purple-600">
+                                  {offer.worker?.full_name?.charAt(0)}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">{offer.worker?.full_name}</p>
+                                <p className="text-xs text-gray-500">Member since {new Date(offer.worker?.created_at).getFullYear()}</p>
+                              </div>
+                            </div>
+                            {offer.message && (
+                              <p className="text-sm text-gray-600 mb-3">{offer.message}</p>
+                            )}
+                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                              <span>Offered {new Date(offer.created_at).toLocaleDateString()}</span>
+                              <span className={`px-2 py-1 rounded-full font-medium ${
+                                offer.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                                offer.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                'bg-amber-100 text-amber-700'
+                              }`}>
+                                {offer.status}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xl font-bold text-purple-600">${offer.amount}</div>
+                            {offer.status === 'pending' && !task.assigned_worker_id && (
+                              <button
+                                onClick={() => acceptOffer(offer.id, offer.worker_id)}
+                                disabled={updating}
+                                className="mt-2 px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50"
+                              >
+                                Accept
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
 
               {/* Owner Controls */}
               {isOwner && task.status === 'approved' && (

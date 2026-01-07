@@ -95,6 +95,32 @@ export interface Review {
   created_at: string;
 }
 
+export interface Offer {
+  id: string;
+  task_id: string;
+  worker_id: string;
+  amount: number;
+  message: string | null;
+  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  task?: Task;
+  worker?: Profile;
+}
+
+export interface Message {
+  id: string;
+  task_id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  created_at: string;
+  // Joined fields
+  sender?: Profile;
+  receiver?: Profile;
+}
+
 // Database schema for Supabase
 export type Database = {
   public: {
@@ -128,6 +154,16 @@ export type Database = {
         Row: Review;
         Insert: Omit<Review, 'id' | 'created_at'>;
         Update: Partial<Omit<Review, 'id' | 'created_at' | 'task_id' | 'reviewer_id'>>;
+      };
+      offers: {
+        Row: Offer;
+        Insert: Omit<Offer, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Offer, 'id' | 'created_at' | 'task_id' | 'worker_id'>>;
+      };
+      messages: {
+        Row: Message;
+        Insert: Omit<Message, 'id' | 'created_at'>;
+        Update: Partial<Omit<Message, 'id' | 'created_at' | 'task_id' | 'sender_id'>>;
       };
     };
   };
