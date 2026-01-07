@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { EmailService } from '@/lib/email/service';
 import { 
   Users, Briefcase, CheckCircle, XCircle, Eye, Clock, 
   TrendingUp, AlertTriangle, Loader2, Search, Filter
@@ -85,14 +84,6 @@ export default function AdminPage() {
       .from('tasks')
       .update({ status: 'approved', approved_at: new Date().toISOString(), approved_by: user?.id })
       .eq('id', taskId);
-    
-    // Send email notification
-    try {
-      await EmailService.notifyTaskApproved(taskId);
-    } catch (error) {
-      console.error('Failed to send email:', error);
-    }
-    
     fetchAdminData();
   };
 
@@ -103,14 +94,6 @@ export default function AdminPage() {
 
   const approveWorker = async (workerId: string) => {
     await supabase.from('profiles').update({ worker_status: 'approved' }).eq('id', workerId);
-    
-    // Send email notification
-    try {
-      await EmailService.notifyWorkerApproved(workerId);
-    } catch (error) {
-      console.error('Failed to send email:', error);
-    }
-    
     fetchAdminData();
   };
 
