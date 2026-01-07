@@ -1,68 +1,170 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { categories, locations } from '@/data/mockData';
-import { ArrowLeft, ArrowRight, Calendar, DollarSign, MapPin, FileText, CheckCircle2 } from 'lucide-react';
+import { 
+  ArrowLeft, ArrowRight, Calendar, CheckCircle2, Phone, Mail, 
+  Loader2, ImagePlus, X, Sparkles, Clock,
+  Wrench, Leaf, Truck, Palette, Puzzle, Package,
+  Monitor, Heart
+} from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 
-const steps = ['Task Details', 'Location & Date', 'Budget', 'Review'];
+const categoryData = [
+  { slug: 'cleaning', name: 'Cleaning', icon: Sparkles },
+  { slug: 'carpet-cleaning', name: 'Carpet Cleaning', icon: Sparkles },
+  { slug: 'window-cleaning', name: 'Window Cleaning', icon: Sparkles },
+  { slug: 'handyman', name: 'Handyman', icon: Wrench },
+  { slug: 'gardening', name: 'Gardening', icon: Leaf },
+  { slug: 'tech-help', name: 'Tech Help', icon: Monitor },
+  { slug: 'rubbish-removal', name: 'Rubbish Removal', icon: Package },
+  { slug: 'moving', name: 'Moving Help', icon: Truck },
+  { slug: 'painting', name: 'Painting', icon: Palette },
+  { slug: 'assembly', name: 'Assembly', icon: Puzzle },
+  { slug: 'delivery', name: 'Delivery', icon: Package },
+  { slug: 'pet-care', name: 'Pet Care', icon: Heart },
+];
+
+const locationData = [
+  // Christchurch
+  'Christchurch CBD', 'Riccarton', 'Papanui', 'Hornby', 'Fendalton', 'Rolleston',
+  // Auckland
+  'Auckland CBD', 'Ponsonby', 'Newmarket', 'Mt Eden', 'Takapuna', 'Henderson'
+];
+
+interface DbCategory { id: string; slug: string; name: string; }
+interface DbLocation { id: string; name: string; }
 
 export default function PostTaskPage() {
-  const [currentStep, setCurrentStep] = useState(0);
+  const { user, profile, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [error, setError] = useState('');
+  const [categories, setCategories] = useState<DbCategory[]>([]);
+  const [locations, setLocations] = useState<DbLocation[]>([]);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  
   const [form, setForm] = useState({
-    title: '',
-    description: '',
-    category: '',
-    location: '',
-    dueDate: '',
-    isFlexible: false,
-    budget: 100,
-    budgetType: 'total' as 'total' | 'hourly',
+    title: '', description: '', category_id: '', location_id: '',
+    preferred_date: '', working_hours: '', budget: 100,
+    budget_type: 'fixed' as 'fixed' | 'hourly',
+    contact_phone: '', contact_email: '', image_url: '',
   });
 
-  const updateForm = (field: string, value: string | number | boolean) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/auth/login?redirect=/post-task');
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const supabase = createClient();
+        const [catsRes, locsRes] = await Promise.all([
+          supabase.from('categories').select('id, slug, name').order('name'),
+          supabase.from('locations').select('id, name').order('is_primary', { ascending: false })
+        ]);
+        if (catsRes.data) setCategories(catsRes.data);
+        if (locsRes.data) setLocations(locsRes.data);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (profile) {
+      setForm(prev => ({ ...prev, contact_email: profile.email || '', contact_phone: profile.phone || '' }));
+    }
+  }, [profile]);
+
+  const updateForm = (field: string, value: string | number) => setForm(prev => ({ ...prev, [field]: value }));
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!file.type.startsWith('image/')) { setError('Please upload an image'); return; }
+    if (file.size > 5 * 1024 * 1024) { setError('Image must be < 5MB'); return; }
+    setUploadingImage(true); setError('');
+    const reader = new FileReader();
+    reader.onload = (e) => setImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+    try {
+      const supabase = createClient();
+      const fileName = `${user.id}-${Date.now()}.${file.name.split('.').pop()}`;
+      const { error: upErr } = await supabase.storage.from('task-images').upload(fileName, file);
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from('task-images').getPublicUrl(fileName);
+      setForm(prev => ({ ...prev, image_url: publicUrl }));
+    } catch { setError('Upload failed'); setImagePreview(null); }
+    setUploadingImage(false);
   };
 
-  const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
-  const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 0));
-
-  const handleSubmit = () => {
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    if (!user) return;
+    setSubmitting(true); setError('');
+    try {
+      const supabase = createClient();
+      const { error: err } = await supabase.from('tasks').insert({
+        poster_id: user.id, category_id: form.category_id, location_id: form.location_id,
+        title: form.title, description: form.description, budget: form.budget,
+        budget_type: form.budget_type, working_hours: form.working_hours || null,
+        preferred_date: form.preferred_date || null, contact_phone: form.contact_phone || null,
+        contact_email: form.contact_email || null, image_url: form.image_url || null,
+        status: 'pending', is_featured: false,
+      });
+      if (err) throw err;
+      setSubmitted(true);
+    } catch (err: unknown) { 
+      setError(err instanceof Error ? err.message : 'Failed to post task'); 
+    }
+    setSubmitting(false);
   };
+
+  const canProceed = () => {
+    if (step === 1) return form.category_id;
+    if (step === 2) return form.title.length >= 5 && form.description.length >= 10;
+    if (step === 3) return form.location_id;
+    if (step === 4) return form.budget > 0;
+    return true;
+  };
+
+  if (authLoading || loading) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+    </div>
+  );
+  if (!user) return null;
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex flex-col bg-black">
+      <div className="min-h-screen flex flex-col bg-gray-50">
         <Header />
-        <main className="flex-1 flex items-center justify-center px-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center max-w-md"
-          >
-            <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center mx-auto mb-6 purple-glow">
-              <CheckCircle2 className="w-10 h-10 text-white" />
+        <main className="flex-1 flex items-center justify-center px-4 py-16">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center max-w-md bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 className="w-10 h-10 text-green-600" />
             </div>
-            <h1 className="text-3xl font-bold mb-4 text-white">Task Posted!</h1>
-            <p className="text-neutral-400 mb-8">
-              Your task has been posted successfully. Taskers will start sending offers soon.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/tasks">
-                <button className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-full font-medium hover:from-purple-700 hover:to-purple-900 transition-all purple-glow">
-                  View My Tasks
-                </button>
-              </Link>
-              <Link href="/">
-                <button className="px-6 py-3 glass border border-neutral-800 text-white rounded-full font-medium hover:border-purple-500 transition-all">
-                  Back to Home
-                </button>
-              </Link>
+            <h1 className="text-2xl font-bold mb-3 text-gray-900">Task Posted!</h1>
+            <p className="text-gray-500 mb-8">Your task is pending admin approval.</p>
+            <div className="flex flex-col gap-3">
+              <Link href="/dashboard/my-tasks"><button className="w-full px-6 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700">View My Tasks</button></Link>
+              <Link href="/"><button className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200">Back Home</button></Link>
             </div>
           </motion.div>
         </main>
@@ -71,299 +173,238 @@ export default function PostTaskPage() {
     );
   }
 
+  const selectedCat = categories.find(c => c.id === form.category_id);
+  const selectedLoc = locations.find(l => l.id === form.location_id);
+
   return (
-    <div className="min-h-screen flex flex-col bg-black">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       <main className="flex-1 py-8 md:py-12">
-        <div className="max-w-2xl mx-auto px-4">
+        <div className="max-w-3xl mx-auto px-4">
           {/* Progress */}
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              {steps.map((step, i) => (
-                <div key={step} className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                    i <= currentStep ? 'bg-gradient-to-br from-purple-600 to-purple-800 text-white purple-glow' : 'bg-neutral-800 text-neutral-500'
-                  }`}>
-                    {i + 1}
-                  </div>
-                  {i < steps.length - 1 && (
-                    <div className={`w-12 sm:w-24 h-1 mx-2 rounded transition-colors ${
-                      i < currentStep ? 'bg-gradient-to-r from-purple-600 to-purple-800' : 'bg-neutral-800'
-                    }`} />
-                  )}
-                </div>
-              ))}
+            <div className="flex justify-between mb-2 text-sm">
+              <span className="font-medium text-gray-600">Step {step} of 5</span>
+              <span className="text-gray-400">{Math.round((step / 5) * 100)}%</span>
             </div>
-            <p className="text-center text-sm text-neutral-400">{steps[currentStep]}</p>
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <motion.div className="h-full bg-purple-600" animate={{ width: `${(step / 5) * 100}%` }} />
+            </div>
           </div>
 
-          {/* Form Card */}
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="glass rounded-2xl shadow-xl border border-neutral-800 p-6 md:p-8"
-          >
-            {/* Step 1: Task Details */}
-            {currentStep === 0 && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center border border-purple-500/30">
-                    <FileText className="w-5 h-5 text-purple-400" />
+          {error && <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{error}</div>}
+
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                <div className="text-center mb-8">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">What do you need help with?</h1>
+                  <p className="text-gray-500">Select a category</p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {categories.length > 0 ? categories.map((cat) => {
+                    const catInfo = categoryData.find(c => c.slug === cat.slug);
+                    const Icon = catInfo?.icon || Sparkles;
+                    const isSelected = form.category_id === cat.id;
+                    return (
+                      <motion.button key={cat.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        onClick={() => updateForm('category_id', cat.id)}
+                        className={`p-4 rounded-2xl border-2 text-left transition-all ${isSelected ? 'border-purple-600 bg-purple-50' : 'border-gray-100 hover:border-gray-200'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${isSelected ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <p className={`font-medium text-sm ${isSelected ? 'text-purple-700' : 'text-gray-700'}`}>{cat.name}</p>
+                      </motion.button>
+                    );
+                  }) : categoryData.map((cat) => {
+                    const isSelected = form.category_id === cat.slug;
+                    return (
+                      <motion.button key={cat.slug} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        onClick={() => updateForm('category_id', cat.slug)}
+                        className={`p-4 rounded-2xl border-2 text-left transition-all ${isSelected ? 'border-purple-600 bg-purple-50' : 'border-gray-100 hover:border-gray-200'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${isSelected ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                          <cat.icon className="w-5 h-5" />
+                        </div>
+                        <p className={`font-medium text-sm ${isSelected ? 'text-purple-700' : 'text-gray-700'}`}>{cat.name}</p>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                <div className="text-center mb-8">
+                  <span className="inline-block px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-4">{selectedCat?.name || 'Task'}</span>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Describe your task</h1>
+                </div>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Task title</label>
+                    <input type="text" value={form.title} onChange={(e) => updateForm('title', e.target.value)}
+                      placeholder="e.g., Help me move a couch" className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 text-lg" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-white">What do you need done?</h2>
-                    <p className="text-sm text-neutral-400">Describe your task in detail</p>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Details</label>
+                    <textarea value={form.description} onChange={(e) => updateForm('description', e.target.value)}
+                      placeholder="Include size, weight, specific requirements..." rows={5}
+                      className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none text-gray-900" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Photo (optional)</label>
+                    {imagePreview ? (
+                      <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-gray-200">
+                        <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+                        <button onClick={() => { setImagePreview(null); setForm(p => ({ ...p, image_url: '' })); }} className="absolute top-3 right-3 p-2 bg-red-500 text-white rounded-full"><X className="w-4 h-4" /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => fileInputRef.current?.click()} disabled={uploadingImage}
+                        className="w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-purple-400 hover:bg-purple-50 transition-colors">
+                        {uploadingImage ? <Loader2 className="w-6 h-6 animate-spin text-purple-600" /> : <><ImagePlus className="w-6 h-6 text-gray-400" /><span className="text-sm text-gray-500">Upload</span></>}
+                      </button>
+                    )}
+                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                   </div>
                 </div>
+              </motion.div>
+            )}
 
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Task Title</label>
-                  <input
-                    type="text"
-                    value={form.title}
-                    onChange={(e) => updateForm('title', e.target.value)}
-                    placeholder="e.g., Help me move a couch"
-                    className="w-full px-4 py-3 glass border border-neutral-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-neutral-500"
-                  />
+            {step === 3 && (
+              <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                <div className="text-center mb-8">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Where and when?</h1>
                 </div>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Location</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {(locations.length > 0 ? locations : locationData.map((n, i) => ({ id: String(i), name: n }))).map((loc) => (
+                        <button key={loc.id} onClick={() => updateForm('location_id', loc.id)}
+                          className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${form.location_id === loc.id ? 'bg-purple-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'}`}>
+                          {loc.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input type="date" value={form.preferred_date} onChange={(e) => updateForm('preferred_date', e.target.value)}
+                          className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
+                      <div className="relative">
+                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <select value={form.working_hours} onChange={(e) => updateForm('working_hours', e.target.value)}
+                          className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 appearance-none">
+                          <option value="">Flexible</option>
+                          <option value="Morning">Morning</option>
+                          <option value="Afternoon">Afternoon</option>
+                          <option value="Evening">Evening</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Category</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {categories.filter(c => c.id !== 'all').map((cat) => (
-                      <button
-                        key={cat.id}
-                        onClick={() => updateForm('category', cat.id)}
-                        className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                          form.category === cat.id
-                            ? 'bg-gradient-to-br from-purple-600 to-purple-800 text-white purple-glow'
-                            : 'glass border border-neutral-800 text-neutral-400 hover:border-purple-500'
-                        }`}
-                      >
-                        {cat.name}
+            {step === 4 && (
+              <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                <div className="text-center mb-8">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Set your budget</h1>
+                </div>
+                <div className="space-y-6">
+                  <div className="flex gap-3 justify-center">
+                    {(['fixed', 'hourly'] as const).map((t) => (
+                      <button key={t} onClick={() => updateForm('budget_type', t)}
+                        className={`px-6 py-3 rounded-xl font-medium ${form.budget_type === t ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                        {t === 'fixed' ? 'Fixed' : 'Hourly'}
                       </button>
                     ))}
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Description</label>
-                  <textarea
-                    value={form.description}
-                    onChange={(e) => updateForm('description', e.target.value)}
-                    placeholder="Provide more details about what you need..."
-                    rows={4}
-                    className="w-full px-4 py-3 glass border border-neutral-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none text-white placeholder:text-neutral-500"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Location & Date */}
-            {currentStep === 1 && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center border border-purple-500/30">
-                    <MapPin className="w-5 h-5 text-purple-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-white">Where and when?</h2>
-                    <p className="text-sm text-neutral-400">Set the location and timing</p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Location</label>
-                  <select
-                    value={form.location}
-                    onChange={(e) => updateForm('location', e.target.value)}
-                    className="w-full px-4 py-3 glass border border-neutral-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
-                  >
-                    <option value="" className="bg-neutral-900">Select a location</option>
-                    {locations.filter(l => l !== 'All Locations').map((loc) => (
-                      <option key={loc} value={loc} className="bg-neutral-900">{loc}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-white">When do you need this done?</label>
-                  <div className="flex items-center gap-3 mb-3">
-                    <input
-                      type="date"
-                      value={form.dueDate}
-                      onChange={(e) => updateForm('dueDate', e.target.value)}
-                      className="flex-1 px-4 py-3 glass border border-neutral-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
-                    />
-                    <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center border border-purple-500/30">
-                      <Calendar className="w-5 h-5 text-purple-400" />
+                  <div className="text-center py-8">
+                    <div className="inline-flex items-center text-6xl font-bold text-gray-900">
+                      <span className="text-3xl text-gray-400">$</span>
+                      <input type="number" value={form.budget} onChange={(e) => updateForm('budget', Number(e.target.value))}
+                        className="w-32 text-center bg-transparent border-none focus:outline-none text-6xl font-bold" />
+                      {form.budget_type === 'hourly' && <span className="text-2xl text-gray-400">/hr</span>}
                     </div>
                   </div>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={form.isFlexible}
-                      onChange={(e) => updateForm('isFlexible', e.target.checked)}
-                      className="w-5 h-5 rounded border-neutral-700 text-purple-600 focus:ring-purple-500 bg-neutral-900"
-                    />
-                    <span className="text-sm text-neutral-400">I&apos;m flexible on the date</span>
-                  </label>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Budget */}
-            {currentStep === 2 && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center border border-purple-500/30">
-                    <DollarSign className="w-5 h-5 text-purple-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-white">Set your budget</h2>
-                    <p className="text-sm text-neutral-400">How much are you willing to pay?</p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-white">Budget Type</label>
-                  <div className="flex gap-3">
-                    {(['total', 'hourly'] as const).map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => updateForm('budgetType', type)}
-                        className={`flex-1 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                          form.budgetType === type
-                            ? 'bg-gradient-to-br from-purple-600 to-purple-800 text-white purple-glow'
-                            : 'glass border border-neutral-800 text-neutral-400 hover:border-purple-500'
-                        }`}
-                      >
-                        {type === 'total' ? 'Total Budget' : 'Hourly Rate'}
-                      </button>
+                  <div className="flex justify-center gap-2 flex-wrap">
+                    {[50, 100, 150, 200, 300].map((a) => (
+                      <button key={a} onClick={() => updateForm('budget', a)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium ${form.budget === a ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>${a}</button>
                     ))}
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-white">
-                    {form.budgetType === 'total' ? 'Total Budget' : 'Hourly Rate'} (NZD)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 text-lg">$</span>
-                    <input
-                      type="number"
-                      value={form.budget}
-                      onChange={(e) => updateForm('budget', Number(e.target.value))}
-                      className="w-full pl-10 pr-4 py-4 text-2xl font-semibold glass border border-neutral-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
-                    />
-                  </div>
-                  <p className="text-sm text-neutral-400 mt-2">
-                    Suggested: $50 - $500 for most tasks
-                  </p>
-                </div>
-
-                <div className="flex gap-2">
-                  {[50, 100, 150, 200, 300].map((amount) => (
-                    <button
-                      key={amount}
-                      onClick={() => updateForm('budget', amount)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                        form.budget === amount
-                          ? 'bg-gradient-to-br from-purple-600 to-purple-800 text-white purple-glow'
-                          : 'glass border border-neutral-800 text-neutral-400 hover:border-purple-500'
-                      }`}
-                    >
-                      ${amount}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              </motion.div>
             )}
 
-            {/* Step 4: Review */}
-            {currentStep === 3 && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center border border-purple-500/30">
-                    <CheckCircle2 className="w-5 h-5 text-purple-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-white">Review your task</h2>
-                    <p className="text-sm text-neutral-400">Make sure everything looks good</p>
-                  </div>
+            {step === 5 && (
+              <motion.div key="s5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                <div className="text-center mb-8">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Contact & Review</h1>
                 </div>
-
-                <div className="glass rounded-xl p-6 space-y-4 border border-neutral-800">
-                  <div>
-                    <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Title</p>
-                    <p className="font-medium text-white">{form.title || 'Not specified'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Category</p>
-                    <p className="font-medium capitalize text-white">{form.category || 'Not specified'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Description</p>
-                    <p className="text-neutral-400">{form.description || 'Not specified'}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-6">
+                  <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Location</p>
-                      <p className="font-medium text-white">{form.location || 'Not specified'}</p>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                      <div className="relative">
+                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input type="tel" value={form.contact_phone} onChange={(e) => updateForm('contact_phone', e.target.value)}
+                          placeholder="021 123 4567" className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900" />
+                      </div>
                     </div>
                     <div>
-                      <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Due Date</p>
-                      <p className="font-medium text-white">{form.dueDate || 'Flexible'}</p>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                      <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input type="email" value={form.contact_email} onChange={(e) => updateForm('contact_email', e.target.value)}
+                          placeholder="you@email.com" className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900" />
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Budget</p>
-                    <p className="text-2xl font-bold text-purple-400">${form.budget} <span className="text-sm font-normal text-neutral-500">{form.budgetType}</span></p>
+                  <div className="bg-gray-50 rounded-2xl p-6 space-y-3">
+                    <h3 className="font-semibold text-gray-900">Summary</h3>
+                    {imagePreview && <div className="relative w-full h-32 rounded-xl overflow-hidden"><Image src={imagePreview} alt="Task" fill className="object-cover" /></div>}
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><span className="text-gray-500">Category</span><p className="font-medium text-gray-900">{selectedCat?.name}</p></div>
+                      <div><span className="text-gray-500">Location</span><p className="font-medium text-gray-900">{selectedLoc?.name}</p></div>
+                      <div><span className="text-gray-500">Budget</span><p className="font-medium text-purple-600">${form.budget} {form.budget_type}</p></div>
+                      <div><span className="text-gray-500">Date</span><p className="font-medium text-gray-900">{form.preferred_date || 'Flexible'}</p></div>
+                    </div>
+                    <div><span className="text-gray-500 text-sm">Title</span><p className="font-medium text-gray-900">{form.title}</p></div>
                   </div>
+                  <p className="text-xs text-gray-500 text-center">By posting, you agree to our <Link href="/terms" className="text-purple-600">Terms</Link></p>
                 </div>
-
-                <p className="text-sm text-neutral-500 text-center">
-                  By posting this task, you agree to our Terms of Service and Privacy Policy.
-                </p>
-              </div>
+              </motion.div>
             )}
+          </AnimatePresence>
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-neutral-800">
-              <button
-                onClick={prevStep}
-                disabled={currentStep === 0}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  currentStep === 0
-                    ? 'text-neutral-600 cursor-not-allowed'
-                    : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
-                }`}
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
+          {/* Navigation */}
+          <div className="flex justify-between mt-6">
+            <button onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium ${step === 1 ? 'text-gray-300' : 'text-gray-600 hover:bg-gray-100'}`}>
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+            {step < 5 ? (
+              <button onClick={() => setStep(s => s + 1)} disabled={!canProceed()}
+                className="flex items-center gap-2 px-8 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 disabled:opacity-50">
+                Continue <ArrowRight className="w-4 h-4" />
               </button>
-
-              {currentStep < steps.length - 1 ? (
-                <button
-                  onClick={nextStep}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-full text-sm font-medium hover:from-purple-700 hover:to-purple-900 transition-all purple-glow"
-                >
-                  Continue
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  onClick={handleSubmit}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-full text-sm font-medium hover:from-purple-700 hover:to-purple-900 transition-all purple-glow"
-                >
-                  Post Task
-                  <CheckCircle2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </motion.div>
+            ) : (
+              <button onClick={handleSubmit} disabled={submitting}
+                className="flex items-center gap-2 px-8 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 disabled:opacity-50">
+                {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle2 className="w-5 h-5" /> Post Task</>}
+              </button>
+            )}
+          </div>
         </div>
       </main>
       <Footer />

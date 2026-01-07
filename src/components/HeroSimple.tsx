@@ -7,30 +7,27 @@ import Link from 'next/link';
 export default function HeroSimple() {
   return (
     <section className="relative bg-white overflow-hidden min-h-[70vh] flex items-center">
-      {/* Purple glow effect in the middle */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      {/* Bold purple gradient background effects */}
+      <div className="absolute inset-0">
+        {/* Main purple glow - center */}
         <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.15, 0.25, 0.15],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="w-[600px] h-[600px] bg-purple-400 rounded-full blur-[120px]"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.25, 0.4, 0.25] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-600 rounded-full blur-[150px]"
+        />
+        {/* Top right accent */}
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute -top-20 -right-20 w-[400px] h-[400px] bg-purple-700 rounded-full blur-[100px]"
+        />
+        {/* Bottom left accent */}
+        <motion.div
+          animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.25, 0.1] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute -bottom-20 -left-20 w-[350px] h-[350px] bg-purple-800 rounded-full blur-[100px]"
         />
       </div>
-
-      {/* Grid pattern overlay */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `
-          linear-gradient(rgba(124, 58, 237, 0.5) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(124, 58, 237, 0.5) 1px, transparent 1px)
-        `,
-        backgroundSize: '50px 50px'
-      }} />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 md:py-24 w-full">
         <div className="max-w-4xl mx-auto text-center">
@@ -49,7 +46,7 @@ export default function HeroSimple() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-purple-500"></span>
             </motion.span>
-            <span className="font-semibold text-gray-700">Christchurch&apos;s #1 Task Marketplace</span>
+            <span className="font-semibold text-gray-700">New Zealand&apos;s Local Task Marketplace</span>
           </motion.div>
 
           {/* Headline */}
@@ -58,23 +55,23 @@ export default function HeroSimple() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
           >
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6">
               <motion.span 
                 className="inline-block text-gray-900"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                Get anything
+                Get your tasks done
               </motion.span>
               <br />
               <motion.span 
-                className="inline-block gradient-text"
+                className="inline-block bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                done today
+                by trusted locals
               </motion.span>
             </h1>
           </motion.div>
@@ -86,7 +83,7 @@ export default function HeroSimple() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-lg md:text-xl text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed"
           >
-            Connect with skilled locals in Christchurch. Post tasks, get offers, and get things done—all in one place.
+            Connect with skilled workers in Christchurch and Auckland. Post tasks, get offers, and get things done—all in one place.
           </motion.p>
 
           {/* Search Bar */}
@@ -97,7 +94,7 @@ export default function HeroSimple() {
             className="max-w-3xl mx-auto mb-12"
           >
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-400 to-purple-600 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-purple-700 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000"></div>
               <div className="relative flex flex-col sm:flex-row gap-3 bg-white border border-gray-200 rounded-3xl p-2 shadow-lg">
                 <div className="flex-1 relative">
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
@@ -133,7 +130,7 @@ export default function HeroSimple() {
             {[
               { icon: CheckCircle2, text: 'Free to post' },
               { icon: CheckCircle2, text: 'Secure payments' },
-              { icon: CheckCircle2, text: 'Verified taskers' },
+              { icon: CheckCircle2, text: 'Verified workers' },
             ].map((item, i) => (
               <motion.div 
                 key={i}

@@ -74,8 +74,8 @@ export default function Footer() {
             <ul className="space-y-3 text-sm text-gray-400">
               <li><a href="#" className="hover:text-purple-400 transition-colors">Help Centre</a></li>
               <li><a href="#" className="hover:text-purple-400 transition-colors">Contact Us</a></li>
-              <li><a href="#" className="hover:text-purple-400 transition-colors">Trust & Safety</a></li>
-              <li><a href="#" className="hover:text-purple-400 transition-colors">Terms of Service</a></li>
+              <li><Link href="/terms" className="hover:text-purple-400 transition-colors">Terms of Service</Link></li>
+              <li><Link href="/privacy" className="hover:text-purple-400 transition-colors">Privacy Policy</Link></li>
             </ul>
           </div>
         </div>
@@ -86,9 +86,8 @@ export default function Footer() {
             © 2026 Taskify. Made with ❤️ in Christchurch, New Zealand.
           </p>
           <div className="flex items-center gap-6 text-sm text-gray-400">
-            <a href="#" className="hover:text-purple-400 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-purple-400 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-purple-400 transition-colors">Cookie Policy</a>
+            <Link href="/privacy" className="hover:text-purple-400 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-purple-400 transition-colors">Terms of Service</Link>
           </div>
         </div>
       </div>

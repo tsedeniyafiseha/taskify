@@ -1,197 +1,231 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { categories, locations } from '@/data/mockData';
-import { ArrowRight, CheckCircle2, DollarSign, Clock, Shield, Star, User, Mail, Phone, MapPin, Briefcase } from 'lucide-react';
+import { 
+  ArrowRight, ArrowLeft, DollarSign, Clock, Shield, Star, Users, CheckCircle, 
+  Loader2, MapPin, Briefcase, Phone, FileText, Sparkles, Check
+} from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/lib/supabase/client';
+
+const skills = [
+  'Cleaning', 'Carpet Cleaning', 'Window Cleaning', 'Handyman', 'Gardening', 
+  'Tech Help', 'Rubbish Removal', 'Moving Help', 'Painting', 'Assembly', 'Delivery', 'Pet Care'
+];
+
+const locations = [
+  // Christchurch
+  'Christchurch CBD', 'Riccarton', 'Papanui', 'Hornby', 'Fendalton', 'Rolleston',
+  // Auckland
+  'Auckland CBD', 'Ponsonby', 'Newmarket', 'Mt Eden', 'Takapuna', 'Henderson'
+];
 
 const benefits = [
-  { icon: DollarSign, title: 'Earn on your terms', description: 'Set your own rates and work when you want' },
-  { icon: Clock, title: 'Flexible schedule', description: 'Choose tasks that fit your availability' },
-  { icon: Shield, title: 'Secure payments', description: 'Get paid safely through our platform' },
-  { icon: Star, title: 'Build your reputation', description: 'Grow your business with reviews and ratings' },
+  { icon: DollarSign, title: 'Earn on your terms', desc: 'Set your own rates' },
+  { icon: Clock, title: 'Flexible hours', desc: 'Work when you want' },
+  { icon: Shield, title: 'Direct contact', desc: 'Connect with clients' },
+  { icon: Star, title: 'Build reputation', desc: 'Grow with reviews' },
 ];
 
 export default function BecomeTaskerPage() {
-  const [step, setStep] = useState<'info' | 'form' | 'success'>('info');
+  const { user, profile, becomeWorker, updateProfile } = useAuth();
+  const router = useRouter();
+  const supabase = createClient();
+  
+  const [step, setStep] = useState(0); // 0 = landing, 1-4 = form steps
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  
   const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    location: '',
+    bio: '',
     skills: [] as string[],
-    experience: '',
-    about: '',
-    hasVehicle: false,
-    hasTools: false,
-    agreeTerms: false,
+    locations_covered: [] as string[],
+    working_hours: '',
+    hourly_rate: 25,
+    phone: '',
   });
 
-  const updateForm = (field: string, value: string | boolean | string[]) => {
-    setForm(prev => ({ ...prev, [field]: value }));
-  };
+  useEffect(() => {
+    if (profile) {
+      setForm(prev => ({
+        ...prev,
+        bio: profile.bio || '',
+        skills: profile.skills || [],
+        locations_covered: profile.locations_covered || [],
+        working_hours: profile.working_hours || '',
+        hourly_rate: profile.hourly_rate || 25,
+        phone: profile.phone || '',
+      }));
+    }
+  }, [profile]);
 
   const toggleSkill = (skill: string) => {
     setForm(prev => ({
       ...prev,
-      skills: prev.skills.includes(skill)
+      skills: prev.skills.includes(skill) 
         ? prev.skills.filter(s => s !== skill)
         : [...prev.skills, skill]
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setStep('success');
+  const toggleLocation = (loc: string) => {
+    setForm(prev => ({
+      ...prev,
+      locations_covered: prev.locations_covered.includes(loc)
+        ? prev.locations_covered.filter(l => l !== loc)
+        : [...prev.locations_covered, loc]
+    }));
   };
 
-  if (step === 'success') {
-    return (
-      <div className="min-h-screen flex flex-col bg-black">
-        <Header />
-        <main className="flex-1 flex items-center justify-center px-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center max-w-md"
-          >
-            <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center mx-auto mb-6 purple-glow">
-              <CheckCircle2 className="w-10 h-10 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold mb-4 text-white">Application Submitted!</h1>
-            <p className="text-neutral-400 mb-8">
-              Thanks for applying to become a Tasker. We&apos;ll review your application and get back to you within 24-48 hours.
-            </p>
-            <Link href="/tasks">
-              <button className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-full font-medium hover:from-purple-700 hover:to-purple-900 transition-all purple-glow">
-                Browse Available Tasks
-              </button>
-            </Link>
-          </motion.div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  const handleSubmit = async () => {
+    if (!user) {
+      router.push('/auth/signup');
+      return;
+    }
 
-  if (step === 'info') {
+    setSubmitting(true);
+    setError('');
+
+    // First become a worker if not already
+    if (!profile?.is_worker) {
+      const { error: workerError } = await becomeWorker();
+      if (workerError) {
+        setError(workerError.message);
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    // Update profile with worker details
+    const { error: updateError } = await updateProfile({
+      bio: form.bio,
+      skills: form.skills,
+      locations_covered: form.locations_covered,
+      working_hours: form.working_hours,
+      hourly_rate: form.hourly_rate,
+      phone: form.phone,
+    });
+
+    if (updateError) {
+      setError(updateError.message);
+    } else {
+      setStep(5); // Success
+    }
+    setSubmitting(false);
+  };
+
+  const canProceed = () => {
+    if (step === 1) return form.skills.length > 0;
+    if (step === 2) return form.locations_covered.length > 0;
+    if (step === 3) return form.bio.length >= 20;
+    if (step === 4) return form.hourly_rate > 0;
+    return true;
+  };
+
+  const isAlreadyWorker = profile?.is_worker;
+  const isApproved = profile?.worker_status === 'approved';
+
+  // Landing page
+  if (step === 0) {
     return (
-      <div className="min-h-screen flex flex-col bg-black">
+      <div className="min-h-screen flex flex-col bg-white">
         <Header />
         <main className="flex-1">
           {/* Hero */}
-          <section className="bg-black text-white py-20 md:py-32 relative overflow-hidden">
-            {/* Purple glow effects */}
-            <div className="absolute top-20 left-10 w-96 h-96 bg-purple-600 rounded-full blur-[120px] opacity-20" />
-            <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-800 rounded-full blur-[120px] opacity-20" />
+          <section className="relative py-20 md:py-32 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-white" />
+            <div className="absolute top-20 left-10 w-96 h-96 bg-purple-200 rounded-full blur-[120px] opacity-30" />
+            <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-300 rounded-full blur-[120px] opacity-20" />
             
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
-              <div className="max-w-3xl">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-sm mb-6 border border-purple-500/30"
-                >
-                  <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
-                  Join 2,500+ Taskers in Christchurch
+              <div className="max-w-3xl mx-auto text-center">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                  className="inline-flex items-center gap-2 bg-purple-100 px-4 py-2 rounded-full text-sm mb-6">
+                  <Users className="w-4 h-4 text-purple-600" />
+                  <span className="text-purple-700 font-medium">Join workers earning in Christchurch</span>
                 </motion.div>
-                <motion.h1
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-4xl md:text-6xl font-bold mb-6"
-                >
-                  Earn money doing what you love
+                
+                <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                  className="text-5xl md:text-6xl font-bold mb-6 text-gray-900">
+                  Earn money doing<br />what you love
                 </motion.h1>
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-xl text-neutral-300 mb-8"
-                >
+                
+                <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                  className="text-xl text-gray-500 mb-10">
                   Be your own boss. Set your own hours. Get paid to help people in your community.
                 </motion.p>
-                <motion.button
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  onClick={() => setStep('form')}
-                  className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-800 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-purple-700 hover:to-purple-900 transition-all purple-glow"
-                >
-                  Start Earning Today
-                  <ArrowRight className="w-5 h-5" />
-                </motion.button>
+
+                {isAlreadyWorker && isApproved ? (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                    className="inline-flex flex-col items-center gap-4">
+                    <div className="flex items-center gap-2 px-6 py-3 bg-green-100 text-green-700 rounded-full font-medium">
+                      <CheckCircle className="w-5 h-5" /> You&apos;re an approved worker!
+                    </div>
+                    <Link href="/tasks"><button className="px-8 py-4 bg-purple-600 text-white rounded-full text-lg font-semibold hover:bg-purple-700 transition-all">Browse Tasks</button></Link>
+                  </motion.div>
+                ) : isAlreadyWorker ? (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                    className="inline-flex flex-col items-center gap-4">
+                    <div className="flex items-center gap-2 px-6 py-3 bg-amber-100 text-amber-700 rounded-full font-medium">
+                      <Clock className="w-5 h-5" /> Your profile is pending approval
+                    </div>
+                    <button onClick={() => setStep(1)} className="px-8 py-4 bg-purple-600 text-white rounded-full text-lg font-semibold hover:bg-purple-700 transition-all">
+                      Update Profile
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                    onClick={() => user ? setStep(1) : router.push('/auth/signup')}
+                    className="inline-flex items-center gap-3 px-10 py-5 bg-purple-600 text-white rounded-full text-xl font-semibold hover:bg-purple-700 transition-all shadow-xl shadow-purple-200">
+                    {user ? 'Get Started' : 'Sign Up to Start'} <ArrowRight className="w-6 h-6" />
+                  </motion.button>
+                )}
               </div>
             </div>
           </section>
 
           {/* Benefits */}
-          <section className="py-20 bg-black">
+          <section className="py-20 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
-              <h2 className="text-3xl font-bold text-center mb-12 text-white">Why become a Tasker?</h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {benefits.map((benefit, i) => (
-                  <motion.div
-                    key={benefit.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    viewport={{ once: true }}
-                    className="text-center"
-                  >
-                    <div className="w-14 h-14 bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-500/30">
-                      <benefit.icon className="w-7 h-7 text-purple-400" />
+              <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">Why become a Worker?</h2>
+              <div className="grid md:grid-cols-4 gap-8">
+                {benefits.map((b, i) => (
+                  <motion.div key={b.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }} viewport={{ once: true }} className="text-center">
+                    <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <b.icon className="w-8 h-8 text-purple-600" />
                     </div>
-                    <h3 className="font-semibold mb-2 text-white">{benefit.title}</h3>
-                    <p className="text-sm text-neutral-400">{benefit.description}</p>
+                    <h3 className="font-semibold text-gray-900 mb-1">{b.title}</h3>
+                    <p className="text-sm text-gray-500">{b.desc}</p>
                   </motion.div>
                 ))}
               </div>
             </div>
           </section>
 
-          {/* How it works */}
-          <section className="py-20 bg-black">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6">
-              <h2 className="text-3xl font-bold text-center mb-12 text-white">How it works</h2>
-              <div className="grid md:grid-cols-3 gap-8">
-                {[
-                  { step: '1', title: 'Create your profile', desc: 'Sign up and tell us about your skills and experience' },
-                  { step: '2', title: 'Browse & bid on tasks', desc: 'Find tasks that match your skills and make offers' },
-                  { step: '3', title: 'Get paid', desc: 'Complete tasks and receive secure payments' },
-                ].map((item, i) => (
-                  <motion.div
-                    key={item.step}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    viewport={{ once: true }}
-                    className="relative"
-                  >
-                    <div className="text-6xl font-bold text-purple-900/30 mb-4">{item.step}</div>
-                    <h3 className="text-xl font-semibold mb-2 text-white">{item.title}</h3>
-                    <p className="text-neutral-400">{item.desc}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* CTA */}
-          <section className="py-20 bg-black">
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-              <h2 className="text-3xl font-bold mb-4 text-white">Ready to start earning?</h2>
-              <p className="text-neutral-400 mb-8">Join thousands of Taskers making money on their own terms.</p>
-              <button
-                onClick={() => setStep('form')}
-                className="px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-full text-lg font-semibold hover:from-purple-700 hover:to-purple-900 transition-all purple-glow"
-              >
-                Apply Now
-              </button>
+          {/* Pricing */}
+          <section className="py-20 bg-white">
+            <div className="max-w-lg mx-auto px-4 sm:px-6">
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-3xl p-8 text-center text-white">
+                <span className="inline-block px-4 py-1 bg-white/20 rounded-full text-sm font-medium mb-4">Worker Subscription</span>
+                <div className="text-5xl font-bold mb-2">$20<span className="text-xl font-normal opacity-80">/month</span></div>
+                <p className="opacity-80 mb-6">Cancel anytime</p>
+                <ul className="space-y-3 text-left mb-8">
+                  {['Unlimited task browsing', 'Direct contact with posters', 'Profile visible to all', 'Priority support'].map(f => (
+                    <li key={f} className="flex items-center gap-3"><Check className="w-5 h-5 text-green-300" />{f}</li>
+                  ))}
+                </ul>
+                <button onClick={() => user ? setStep(1) : router.push('/auth/signup')}
+                  className="w-full py-4 bg-white text-purple-600 rounded-xl font-semibold hover:bg-gray-100 transition-colors">
+                  {user ? 'Start Application' : 'Sign Up First'}
+                </button>
+              </motion.div>
             </div>
           </section>
         </main>
@@ -200,191 +234,208 @@ export default function BecomeTaskerPage() {
     );
   }
 
-  // Form step
+  // Success page
+  if (step === 5) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Header />
+        <main className="flex-1 flex items-center justify-center px-4 py-16">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="text-center max-w-md bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-10 h-10 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-bold mb-3 text-gray-900">Application Submitted!</h1>
+            <p className="text-gray-500 mb-8">Your worker profile is pending admin approval. We&apos;ll notify you once approved.</p>
+            <div className="flex flex-col gap-3">
+              <Link href="/tasks"><button className="w-full px-6 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-all">Browse Tasks</button></Link>
+              <Link href="/dashboard"><button className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all">Go to Dashboard</button></Link>
+            </div>
+          </motion.div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Form steps
   return (
-    <div className="min-h-screen flex flex-col bg-black">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       <main className="flex-1 py-8 md:py-12">
         <div className="max-w-2xl mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass rounded-2xl shadow-xl border border-neutral-800 p-6 md:p-8"
-          >
-            <h1 className="text-2xl font-bold mb-2 text-white">Become a Tasker</h1>
-            <p className="text-neutral-400 mb-8">Fill out the form below to start earning</p>
+          {/* Progress */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-600">Step {step} of 4</span>
+              <span className="text-sm text-gray-400">{Math.round((step / 4) * 100)}% complete</span>
+            </div>
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <motion.div className="h-full bg-purple-600 rounded-full" animate={{ width: `${(step / 4) * 100}%` }} />
+            </div>
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Personal Info */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-neutral-500 mb-2">
-                  <User className="w-4 h-4" />
-                  Personal Information
-                </div>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">First Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={form.firstName}
-                      onChange={(e) => updateForm('firstName', e.target.value)}
-                      className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
-                    />
+          {error && <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{error}</div>}
+
+          <AnimatePresence mode="wait">
+            {/* Step 1: Skills */}
+            {step === 1 && (
+              <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                <div className="text-center mb-8">
+                  <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="w-7 h-7 text-purple-600" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Last Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={form.lastName}
-                      onChange={(e) => updateForm('lastName', e.target.value)}
-                      className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
-                    />
-                  </div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">What are your skills?</h1>
+                  <p className="text-gray-500">Select all the services you can offer</p>
                 </div>
-              </div>
-
-              {/* Contact */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-neutral-500 mb-2">
-                  <Mail className="w-4 h-4" />
-                  Contact Details
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={form.email}
-                    onChange={(e) => updateForm('email', e.target.value)}
-                    className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Phone</label>
-                  <input
-                    type="tel"
-                    required
-                    value={form.phone}
-                    onChange={(e) => updateForm('phone', e.target.value)}
-                    className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                </div>
-              </div>
-
-              {/* Location */}
-              <div>
-                <div className="flex items-center gap-2 text-sm font-medium text-neutral-500 mb-2">
-                  <MapPin className="w-4 h-4" />
-                  Location
-                </div>
-                <select
-                  required
-                  value={form.location}
-                  onChange={(e) => updateForm('location', e.target.value)}
-                  className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black bg-white"
-                >
-                  <option value="">Select your area</option>
-                  {locations.filter(l => l !== 'All Locations').map((loc) => (
-                    <option key={loc} value={loc}>{loc}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Skills */}
-              <div>
-                <div className="flex items-center gap-2 text-sm font-medium text-neutral-500 mb-2">
-                  <Briefcase className="w-4 h-4" />
-                  Skills (select all that apply)
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {categories.filter(c => c.id !== 'all').map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => toggleSkill(cat.id)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                        form.skills.includes(cat.id)
-                          ? 'bg-black text-white'
-                          : 'bg-neutral-100 hover:bg-neutral-200'
-                      }`}
-                    >
-                      {cat.name}
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {skills.map(skill => (
+                    <button key={skill} onClick={() => toggleSkill(skill)}
+                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${form.skills.includes(skill) ? 'bg-purple-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'}`}>
+                      {form.skills.includes(skill) && <Check className="w-4 h-4 inline mr-2" />}{skill}
                     </button>
                   ))}
                 </div>
-              </div>
+                <p className="text-center text-sm text-gray-500 mt-4">{form.skills.length} selected</p>
+              </motion.div>
+            )}
 
-              {/* Experience */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Experience Level</label>
-                <select
-                  required
-                  value={form.experience}
-                  onChange={(e) => updateForm('experience', e.target.value)}
-                  className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black bg-white"
-                >
-                  <option value="">Select experience</option>
-                  <option value="beginner">Beginner (0-1 years)</option>
-                  <option value="intermediate">Intermediate (1-3 years)</option>
-                  <option value="experienced">Experienced (3-5 years)</option>
-                  <option value="expert">Expert (5+ years)</option>
-                </select>
-              </div>
+            {/* Step 2: Locations */}
+            {step === 2 && (
+              <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                <div className="text-center mb-8">
+                  <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <MapPin className="w-7 h-7 text-purple-600" />
+                  </div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Where can you work?</h1>
+                  <p className="text-gray-500">Select all areas you can cover</p>
+                </div>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {locations.map(loc => (
+                    <button key={loc} onClick={() => toggleLocation(loc)}
+                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${form.locations_covered.includes(loc) ? 'bg-purple-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'}`}>
+                      {form.locations_covered.includes(loc) && <Check className="w-4 h-4 inline mr-2" />}{loc}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-center text-sm text-gray-500 mt-4">{form.locations_covered.length} selected</p>
+              </motion.div>
+            )}
 
-              {/* About */}
-              <div>
-                <label className="block text-sm font-medium mb-2">About You</label>
-                <textarea
-                  value={form.about}
-                  onChange={(e) => updateForm('about', e.target.value)}
-                  placeholder="Tell us about yourself and why you'd be a great Tasker..."
-                  rows={4}
-                  className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black resize-none"
-                />
-              </div>
+            {/* Step 3: Bio & Contact */}
+            {step === 3 && (
+              <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                <div className="text-center mb-8">
+                  <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <FileText className="w-7 h-7 text-purple-600" />
+                  </div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Tell us about yourself</h1>
+                  <p className="text-gray-500">Help clients get to know you</p>
+                </div>
+                
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Your bio</label>
+                    <textarea value={form.bio} onChange={(e) => setForm(prev => ({ ...prev, bio: e.target.value }))}
+                      placeholder="Tell clients about your experience, skills, and what makes you great at what you do..."
+                      rows={5} className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none text-gray-900 placeholder:text-gray-400" />
+                    <p className="text-xs text-gray-500 mt-1">{form.bio.length} characters (min 20)</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input type="tel" value={form.phone} onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="021 123 4567" className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder:text-gray-400" />
+                    </div>
+                  </div>
 
-              {/* Checkboxes */}
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.hasVehicle}
-                    onChange={(e) => updateForm('hasVehicle', e.target.checked)}
-                    className="w-5 h-5 rounded border-neutral-300 text-black focus:ring-black"
-                  />
-                  <span className="text-sm">I have access to a vehicle</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.hasTools}
-                    onChange={(e) => updateForm('hasTools', e.target.checked)}
-                    className="w-5 h-5 rounded border-neutral-300 text-black focus:ring-black"
-                  />
-                  <span className="text-sm">I have my own tools/equipment</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    required
-                    checked={form.agreeTerms}
-                    onChange={(e) => updateForm('agreeTerms', e.target.checked)}
-                    className="w-5 h-5 rounded border-neutral-300 text-black focus:ring-black"
-                  />
-                  <span className="text-sm">I agree to the Terms of Service and Privacy Policy</span>
-                </label>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Working hours</label>
+                    <select value={form.working_hours} onChange={(e) => setForm(prev => ({ ...prev, working_hours: e.target.value }))}
+                      className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900">
+                      <option value="">Select availability</option>
+                      <option value="Weekdays only">Weekdays only</option>
+                      <option value="Weekends only">Weekends only</option>
+                      <option value="Flexible / Anytime">Flexible / Anytime</option>
+                      <option value="Mornings only">Mornings only</option>
+                      <option value="Evenings only">Evenings only</option>
+                    </select>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
-              <button
-                type="submit"
-                className="w-full py-4 bg-black text-white rounded-xl font-semibold hover:bg-neutral-800 transition-colors"
-              >
-                Submit Application
+            {/* Step 4: Rate & Review */}
+            {step === 4 && (
+              <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                <div className="text-center mb-8">
+                  <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <DollarSign className="w-7 h-7 text-purple-600" />
+                  </div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Set your hourly rate</h1>
+                  <p className="text-gray-500">You can change this anytime</p>
+                </div>
+                
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center gap-2 text-6xl font-bold text-gray-900">
+                    <span className="text-3xl text-gray-400">$</span>
+                    <input type="number" value={form.hourly_rate} onChange={(e) => setForm(prev => ({ ...prev, hourly_rate: Number(e.target.value) }))}
+                      className="w-32 text-center bg-transparent border-none focus:outline-none text-6xl font-bold" />
+                    <span className="text-2xl text-gray-400">/hr</span>
+                  </div>
+                  <p className="text-gray-500 mt-2">NZD</p>
+                </div>
+
+                <div className="flex justify-center gap-2 mb-8">
+                  {[20, 25, 30, 40, 50, 75].map(rate => (
+                    <button key={rate} onClick={() => setForm(prev => ({ ...prev, hourly_rate: rate }))}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${form.hourly_rate === rate ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                      ${rate}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Summary */}
+                <div className="bg-gray-50 rounded-2xl p-6 space-y-3">
+                  <h3 className="font-semibold text-gray-900">Profile Summary</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="text-gray-500">Skills</span><p className="font-medium text-gray-900">{form.skills.length} selected</p></div>
+                    <div><span className="text-gray-500">Locations</span><p className="font-medium text-gray-900">{form.locations_covered.length} areas</p></div>
+                    <div><span className="text-gray-500">Rate</span><p className="font-medium text-purple-600">${form.hourly_rate}/hr</p></div>
+                    <div><span className="text-gray-500">Availability</span><p className="font-medium text-gray-900">{form.working_hours || 'Not set'}</p></div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Navigation */}
+          <div className="flex items-center justify-between mt-6">
+            <button onClick={() => setStep(s => Math.max(0, s - 1))}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl font-medium text-gray-600 hover:bg-gray-100 transition-all">
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+
+            {step < 4 ? (
+              <button onClick={() => setStep(s => s + 1)} disabled={!canProceed()}
+                className="flex items-center gap-2 px-8 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                Continue <ArrowRight className="w-4 h-4" />
               </button>
-            </form>
-          </motion.div>
+            ) : (
+              <button onClick={handleSubmit} disabled={submitting}
+                className="flex items-center gap-2 px-8 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-all disabled:opacity-50">
+                {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle className="w-5 h-5" /> Submit Application</>}
+              </button>
+            )}
+          </div>
         </div>
       </main>
       <Footer />
