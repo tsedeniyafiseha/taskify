@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -8,10 +8,7 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import Header from '@/components/Header';
 import { createClient } from '@/lib/supabase/client';
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
-
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -148,5 +145,17 @@ export default function LoginPage() {
         </motion.p>
       </main>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

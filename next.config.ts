@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
         hostname: 'i.pravatar.cc',
       },
     ],
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
   },
 };
 
