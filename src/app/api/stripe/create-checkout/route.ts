@@ -1,8 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe, PRICING } from '@/lib/stripe/config';
 import { createClient } from '@/lib/supabase/server';
 
+// Only import Stripe if we have the secret key
+let stripe: any = null;
+let PRICING: any = null;
+
+if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !== 'sk_test_your_key') {
+  const Stripe = require('stripe');
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-12-15.clover',
+  });
+  
+  PRICING = {
+    TASK_POSTING_FEE: 500,
+    FEATURED_TASK_FEE: 1000,
+    WORKER_SUBSCRIPTION: 2000,
+    CONTACT_ACCESS_FEE: 300,
+  };
+}
+
 export async function POST(request: NextRequest) {
+  // Return early if Stripe is not configured
+  if (!stripe || !PRICING) {
+    return NextResponse.json({ 
+      error: 'Stripe not configured. Please add STRIPE_SECRET_KEY to environment variables.' 
+    }, { status: 500 });
+  }
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe/config';
 import { createClient } from '@supabase/supabase-js';
-import Stripe from 'stripe';
+
+// Only import Stripe if configured
+let stripe: any = null;
+if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !== 'sk_test_your_key') {
+  const Stripe = require('stripe');
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-12-15.clover',
+  });
+}
 
 // Use service role for webhook to bypass RLS
 const supabaseAdmin = createClient(
@@ -10,6 +17,9 @@ const supabaseAdmin = createClient(
 );
 
 export async function POST(request: NextRequest) {
+  if (!stripe) {
+    return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
+  }
   const body = await request.text();
   const signature = request.headers.get('stripe-signature')!;
 
